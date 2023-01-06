@@ -1,7 +1,4 @@
-# This Python file uses the following encoding: utf-8
-
-# if __name__ == "__main__":
-#     pass
+# This file contains python functions for different Data Model checks
 
 def checkColumnSymbols (sheet, column):
     def match (text, alphabet=set('abcdefghijklmnopqrstuvwxyz_0123456789')):
@@ -19,7 +16,7 @@ def checkUnknownStereotypes (sheet):
     for row in sheet.iter_rows(min_row = 2, min_col = 2, max_col = 2):
         for cell in row:
             if cell.value not in stereotypes:
-                errors.append("Некорректное значение стереотипа таблицы: {}".format(cell.value))
+                errors.append("Stereotype {} is invalid".format(cell.value))
     return errors
 
 def checkUnknownDataTypes (sheet):
@@ -46,5 +43,19 @@ def checkUnknownDataTypes (sheet):
     for row in sheet.iter_rows(min_row = 2, min_col = 6, max_col = 6):
         for cell in row:
             if cell.value not in data_types:
-                errors.append("Несуществующий тип данных: {}".format(cell.value))
+                errors.append("Unknown data type: {}".format(cell.value))
     return errors
+
+def checkColumnDuplicates (sheet):
+    errors = []
+    columns = []
+    unique_columns = []
+    for row in sheet.iter_rows(min_row = 2, min_col = 3, max_col = 3):
+        for cell in row:
+            other_cell = sheet.cell(row = cell.row, column = 5)
+            columns.append(cell.value + "." + other_cell.value)
+    for i in columns:
+        if i not in unique_columns:
+            unique_columns.append(i)
+        else:
+            errors.append("Duplicated field: {}".format(i))

@@ -1,12 +1,16 @@
+#This file contains basic back-end logic for the app
+
 import sys
 import os
-import openpyxl
-#import modelChecks.py
+#import openpyxl
 import modelChecks
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QObject, Signal, Slot
 from modelChecks import *
+from scriptGenerator import *
+from excelTools import *
+
 class MainBackend(QObject):
     path1 = Signal(str, arguments=['write'])
 
@@ -16,11 +20,9 @@ class MainBackend(QObject):
     # Logical Data Model Check
     @Slot('QString', 'QString', 'QString')
     def checkModel(self, pathLMD, pathStandard, pathSave):
-        # Uploading Logical Data Model Check
-        wb = openpyxl.load_workbook(filename = pathLMD)
-        sheet = wb['Model']
+        # Setting Logical Data Model worksheet
+        sheet = setWorksheet(pathLMD, 'Model')
         errors = []
-
         goodStructure = True
 
         # Check table_schema for incorrect symbols
@@ -37,6 +39,9 @@ class MainBackend(QObject):
 
         # Check for unknown data types
         errors.append(checkUnknownDataTypes(sheet))
+
+        # Check for fields duplicates
+        errors.append(checkColumnDuplicates(sheet))
 
         # Full structure check
         #goodStructure = checkColumn(1, "table_schema") and checkColumn(2, "table_type") and checkColumn(3, "table_name") and checkColumn(4, "table_desc") and checkColumn(5, "field_name") and checkColumn(6, "field_type") and checkColumn(7, "null / not null") and checkColumn(8, "field_desc") and checkColumn(9, "distribution / partition")
@@ -61,18 +66,7 @@ class MainBackend(QObject):
                 if not cell.value:
                     errors.append("Встречаются незаполненные описания столбцов")
 
-        # Check for column duplicates
-        columns = []
-        unique_columns = []
-        for row in sheet.iter_rows(min_row = 2, min_col = 3, max_col = 3):
-            for cell in row:
-                other_cell = sheet.cell(row = cell.row, column = 5)
-                columns.append(cell.value + "." + other_cell.value)
-        for i in columns:
-            if i not in unique_columns:
-                unique_columns.append(i)
-            else:
-                errors.append("Дублируется поле: {}".format(i))
+
 
         # Mandatory fields check
         wb = openpyxl.load_workbook(filename = pathStandard)
@@ -126,49 +120,7 @@ class MainBackend(QObject):
     # DDL-structures Generator
     @Slot('QString', 'QString')
     def generateDatabase(self, pathLMD, pathSave):
-        ## Подгружается файл с моделью
-        wb = openpyxl.load_workbook(filename = pathLMD)
-        sheet = wb['Model']
-        # Creating a list of unique table names
-        tables = []
-        unique_tables = []
-        for row in sheet.iter_rows(min_row = 2, min_col = 1, max_col = 1):
-            for cell in row:
-                other_cell = sheet.cell(row = cell.row, column = 3)
-                tables.append(cell.value + "." + other_cell.value)
-        for i in tables:
-            if i not in unique_tables:
-                unique_tables.append(i)
-        # Creating a dictionary for storing scripts
-        scripts = {}
-        for i in unique_tables:
-            scripts[i] = "create table " + i + " ("
-        # Filling in scripts dictionary
-        for row in sheet.iter_rows(min_row = 2, min_col = 1, max_col = 1):
-            for cell in row:
-                table_schema = sheet.cell(row = cell.row, column = 1)
-                table_name = sheet.cell(row = cell.row, column = 3)
-                column = sheet.cell(row = cell.row, column = 5)
-                data_type = sheet.cell(row = cell.row, column = 6)
-                nullable = sheet.cell(row = cell.row, column = 7)
-                scripts[table_schema.value + "." + table_name.value] += ("\n\t" + column.value + " " + data_type.value + " " + nullable.value + ",")
-        # DDL-scripts output
-        os.chdir(pathSave)
-        with open('scripts.txt', 'w') as f:
-            for table in scripts:
-                f.write("\n")
-                f.write("\n")
-                for script in scripts[table]:
-                    f.write(f"{script}")
-                f.write(");")
-        f.close()
-        f = open('scripts.txt', 'r')
-        data = f.read()
-        data = data.replace(",)", "\n)")
-        f.close()
-        f = open('scripts.txt', 'w')
-        f.write(data)
-        f.close()
+        scriptGenerator(pathLMD, pathSave)
 
 if __name__ == "__main__":
     app = QGuiApplication(sys.argv)
