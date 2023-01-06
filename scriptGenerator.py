@@ -1,11 +1,8 @@
 # This file contains python function for generating DDL-scripts based on Logical Data Model
-import openpyxl
 import os
 from excelTools import *
 
 def scriptGenerator (pathLMD, pathSave):
-    #wb = openpyxl.load_workbook(filename = pathLMD)
-    #sheet = wb['Model']
     sheet = setWorksheet(pathLMD, 'Model')
     # Creating a list of unique table names
     tables = []
