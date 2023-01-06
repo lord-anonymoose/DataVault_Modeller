@@ -1,10 +1,12 @@
 import sys
 import os
 import openpyxl
+#import modelChecks.py
+import modelChecks
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QObject, Signal, Slot
-
+from modelChecks import *
 class MainBackend(QObject):
     path1 = Signal(str, arguments=['write'])
 
@@ -12,82 +14,53 @@ class MainBackend(QObject):
         QObject.__init__(self)
 
     # Logical Data Model Check
-    @Slot('QString', 'QString')
-    def checkModel(self, pathLMD, pathSave):
+    @Slot('QString', 'QString', 'QString')
+    def checkModel(self, pathLMD, pathStandard, pathSave):
         # Uploading Logical Data Model Check
         wb = openpyxl.load_workbook(filename = pathLMD)
-        sheet = wb['Модель']
+        sheet = wb['Model']
         errors = []
-        # Data Vault Standards
-        stereotypes = ['HUB', 'SAT', 'LNK']
-        data_types = [
-            'bigint',
-            'bigserial',
-            'boolean',
-            'box',
-            'char',
-            'varchar',
-            'cidr',
-            'date',
-            'cidr',
-            'real',
-            'polygon',
-            'real',
-            'serial',
-            'smallint',
-            'text',
-            'timestamp',
-            'uuid'
-        ]
+
         goodStructure = True
-        # Unknown symbols checker
-        def match (text, alphabet=set('abcdefghijklmnopqrstuvwxyz_0123456789')):
-            return not alphabet.isdisjoint(text.lower())
-        for row in sheet.iter_rows(min_row = 2, min_col = 1, max_col = 1):
-            for cell in row:
-               if not match(cell.value):
-                   errors.append("Схема {} имеет некорректное название".format(cell.value))
-        # Column name check
-        def checkColumn (number, name):
-            value = sheet.cell(row = 1, column = number).value
-            return value == name
-        # Full structure check
-        goodStructure = checkColumn(1, "table_schema") and checkColumn(2, "table_type") and checkColumn(3, "table_name") and checkColumn(4, "table_desc") and checkColumn(5, "field_name") and checkColumn(6, "field_type") and checkColumn(7, "null / not null") and checkColumn(8, "field_desc") and checkColumn(9, "distribution / partition")
+
+        # Check table_schema for incorrect symbols
+        errors.append(checkColumnSymbols(sheet,1))
+
+        # Check table_name for incorrect symbols
+        errors.append(checkColumnSymbols(sheet,3))
+
+        # Check column_name for incorrect symbols
+        errors.append(checkColumnSymbols(sheet,5))
+
         # Check for unknown stereotypes
-        for row in sheet.iter_rows(min_row = 2, min_col = 2, max_col = 2):
-            for cell in row:
-                if cell.value not in stereotypes:
-                    errors.append("Некорректное значение стереотипа таблицы: {}".format(cell.value))
-        # Check for unknown symbols in table names
-        for row in sheet.iter_rows(min_row = 2, min_col = 3, max_col = 3):
-            for cell in row:
-                if not match(cell.value):
-                    errors.append("Таблица {} имеет некорректное название".format(cell.value))
+        errors.append(checkUnknownStereotypes(sheet))
+
+        # Check for unknown data types
+        errors.append(checkUnknownDataTypes(sheet))
+
+        # Full structure check
+        #goodStructure = checkColumn(1, "table_schema") and checkColumn(2, "table_type") and checkColumn(3, "table_name") and checkColumn(4, "table_desc") and checkColumn(5, "field_name") and checkColumn(6, "field_type") and checkColumn(7, "null / not null") and checkColumn(8, "field_desc") and checkColumn(9, "distribution / partition")
+
+
         # Check for empty table descriptions
         for row in sheet.iter_rows(min_row = 2, min_col = 4, max_col = 4):
             for cell in row:
                 if not cell.value:
                     errors.append("Встречаются незаполненные описания таблиц")
-        # Check for unknown symbols in column names
-        for row in sheet.iter_rows(min_row = 2, min_col = 5, max_col= 5):
-            for cell in row:
-                if not match(cell.value):
-                    errors.append("Таблица {} имеет некорректное название".format(cell.value))
-        # Check for unknown data types
-        for row in sheet.iter_rows(min_row = 2, min_col = 6, max_col = 6):
-            for cell in row:
-                if cell.value not in data_types:
-                    errors.append("Несуществующий тип данных: {}".format(cell.value))
+
+
         # Check for unknown values in "null / not null" column
         for row in sheet.iter_rows(min_row = 2, min_col = 7, max_col = 7):
             for cell in row:
                 if cell.value not in ['null', 'not null']:
                     errors.append("Некорректное значение в столбце null / not null: {}".format(cell.value))
+
         # Check for empty column descriptions
         for row in sheet.iter_rows(min_row = 2, min_col = 8, max_col = 8):
             for cell in row:
                 if not cell.value:
                     errors.append("Встречаются незаполненные описания столбцов")
+
         # Check for column duplicates
         columns = []
         unique_columns = []
@@ -100,6 +73,42 @@ class MainBackend(QObject):
                 unique_columns.append(i)
             else:
                 errors.append("Дублируется поле: {}".format(i))
+
+        # Mandatory fields check
+        wb = openpyxl.load_workbook(filename = pathStandard)
+        sheet = wb['Standards']
+
+        # Fetching mandatory columns for Data Vault stereotypes
+        hubColumns = []
+        satColumns = []
+        lnkColumns = []
+        for row in sheet.iter_rows(min_row = 2, min_col = 1, max_col = 1):
+            for cell in row:
+                table_stereotype = sheet.cell(row = cell.row, column = 1)
+                print(table_stereotype)
+                field_name = sheet.cell(row = cell.row, column = 2)
+                field_type = sheet.cell(row = cell.row, column = 3)
+                nullable = sheet.cell(row = cell.row, column = 4)
+                #new_col = field_name.value + "." + field_type.value + "." + nullable.value
+                new_col = field_name.value
+                print(new_col)
+                if (table_stereotype == 'HUB'):
+                    hubColumns.append(new_col)
+                elif (table_stereotype == 'SAT'):
+                    satColumns.append(new_col)
+                elif (table_stereotype == 'LNK'):
+                    lnkColumns.append(new_col)
+
+        # Fetching unique tables from Data Model
+        unique_tables = []
+        for row in sheet.iter_rows(min_row = 2, min_col = 1, max_col = 1):
+            for cell in row:
+                tableName = sheet.cell(row = cell.row, column = 3)
+                if tableName not in unique_tables:
+                    unique_tables.append(tableName)
+
+        #mandatoryColumns = [
+
         # Error report output
         os.chdir(pathSave)
         with open('error_report.txt', 'w') as f:
@@ -111,12 +120,15 @@ class MainBackend(QObject):
             else:
                 f.write("Некорректная структура файла модели")
 
+
+
+
     # DDL-structures Generator
     @Slot('QString', 'QString')
     def generateDatabase(self, pathLMD, pathSave):
         ## Подгружается файл с моделью
         wb = openpyxl.load_workbook(filename = pathLMD)
-        sheet = wb['Модель']
+        sheet = wb['Model']
         # Creating a list of unique table names
         tables = []
         unique_tables = []

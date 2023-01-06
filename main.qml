@@ -95,7 +95,7 @@ ApplicationWindow {
                 onClicked: {
                     checkEmpty()
                     if (emptyFields === 0) {
-                        backend.checkModel(ldmText.text, outputText.text)
+                        backend.checkModel(ldmText.text, stText.text, outputText.text)
                         logText.text = "Successfully checked model! See the results in an output file"
                     }
                 }
