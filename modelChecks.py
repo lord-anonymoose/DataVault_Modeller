@@ -1,4 +1,5 @@
 # This file contains python functions for different Data Model checks
+import re
 
 def checkModelFile (sheetLDM):
     goalHeader = "table_schematable_typetable_nametable_descfield_namefield_typenull / not nullfield_descdistribution / partition"
@@ -31,12 +32,13 @@ def checkStandardFile (sheetStandard):
 
 #To be updated
 def checkColumnSymbols (sheet, column):
-    def match (text, alphabet=set('abcdefghijklmnopqrstuvwxyz_0123456789')):
-        return not alphabet.isdisjoint(text.lower())
+    def isValid (text):
+        match = re.match("""^[a-zA-Z][a-z0-9 _"'.,]+$""", text)
+        return bool(match)
     errors = []
     for row in sheet.iter_rows(min_row = 2, min_col = column, max_col = column):
         for cell in row:
-           if not match(cell.value):
+           if not isValid(cell.value):
                errors.append("Value '{}' does have invalid characters".format(cell.value))
     return errors
 

@@ -1,2 +1,3 @@
 Value 'Два' does have invalid characters
+Value 'клиент_рк' does have invalid characters
 Unknown data type: 'Текст'

@@ -96,7 +96,7 @@ ApplicationWindow {
                     checkEmpty()
                     if (emptyFields === 0) {
                         backend.checkModel(ldmText.text, stText.text, outputText.text)
-                        logText.text = "Successfully checked model! See the results in an output file"
+                        logText.text = "Successfully checked model! See the results in an output file named 'error_report.txt'"
                     }
                 }
             }
@@ -108,7 +108,7 @@ ApplicationWindow {
                     checkEmpty()
                     if (emptyFields === 0) {
                         backend.generateDatabase(ldmText.text, outputText.text)
-                        logText.text = "Generated DDLs based on the model! See the results in an output file"
+                        logText.text = "Generated DDLs based on the model! See the results in an output file named 'scripts.sql'"
                     }
                 }
              }

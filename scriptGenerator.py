@@ -29,7 +29,7 @@ def scriptGenerator (pathLMD, pathSave):
             scripts[table_schema.value + "." + table_name.value] += ("\n\t" + column.value + " " + data_type.value + " " + nullable.value + ",")
     # DDL-scripts output
     os.chdir(pathSave)
-    with open('scripts.txt', 'w') as f:
+    with open('scripts.sql', 'w') as f:
         for table in scripts:
             f.write("\n")
             f.write("\n")
@@ -37,10 +37,10 @@ def scriptGenerator (pathLMD, pathSave):
                 f.write(f"{script}")
             f.write(");")
     f.close()
-    f = open('scripts.txt', 'r')
+    f = open('scripts.sql', 'r')
     data = f.read()
     data = data.replace(",)", "\n)")
     f.close()
-    f = open('scripts.txt', 'w')
+    f = open('scripts.sql', 'w')
     f.write(data)
     f.close()
