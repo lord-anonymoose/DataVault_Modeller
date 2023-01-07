@@ -1,14 +1,33 @@
 # This file contains python functions for different Data Model checks
 
-#To be updated
 def checkModelFile (sheetLDM):
-    errorMessage = ""
-    return errorMessage
+    goalHeader = "table_schematable_typetable_nametable_descfield_namefield_typenull / not nullfield_descdistribution / partition"
+    col1 = str(sheetLDM.cell(row = 1, column = 1).value)
+    col2 = str(sheetLDM.cell(row = 1, column = 2).value)
+    col3 = str(sheetLDM.cell(row = 1, column = 3).value)
+    col4 = str(sheetLDM.cell(row = 1, column = 4).value)
+    col5 = str(sheetLDM.cell(row = 1, column = 5).value)
+    col6 = str(sheetLDM.cell(row = 1, column = 6).value)
+    col7 = str(sheetLDM.cell(row = 1, column = 7).value)
+    col8 = str(sheetLDM.cell(row = 1, column = 8).value)
+    col9 = str(sheetLDM.cell(row = 1, column = 9).value)
+    actualHeader = col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9
+    if (actualHeader == goalHeader):
+        return ""
+    else:
+        return "Logical Data Model file does not follow structure guidelines"
 
-#To be updated
 def checkStandardFile (sheetStandard):
-    errorMessage = ""
-    return errorMessage
+    goalHeader = "table_typefield_namefield_typenull / not null"
+    col1 = str(sheetStandard.cell(row = 1, column = 1).value)
+    col2 = str(sheetStandard.cell(row = 1, column = 2).value)
+    col3 = str(sheetStandard.cell(row = 1, column = 3).value)
+    col4 = str(sheetStandard.cell(row = 1, column = 4).value)
+    actualHeader = col1 + col2 + col3 + col4
+    if (actualHeader == goalHeader):
+        return ""
+    else:
+        return "Modelling Standard file does not follow structure guidelines"
 
 #To be updated
 def checkColumnSymbols (sheet, column):

@@ -1,0 +1,2 @@
+Value 'Два' does have invalid characters
+Unknown data type: 'Текст'
