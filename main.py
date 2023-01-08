@@ -69,7 +69,7 @@ class MainBackend(QObject):
                 for error in errors:
                     f.write(f"{error}\n")
                 if not errors:
-                    f.write("Модель успешно прошла проверки")
+                    f.write("Model successfully checked!")
             else:
                 f.write(structureError)
 

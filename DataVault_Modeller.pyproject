@@ -1,3 +1,3 @@
 {
-    "files": ["main.qml","scriptGenerator.py","modelChecks.py","main.py","excelTools.py"]
+    "files": ["modelChecks.py","main.qml","main.py","scriptGenerator.py","excelTools.py"]
 }
